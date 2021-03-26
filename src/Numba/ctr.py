@@ -4,7 +4,6 @@ import numba
 class CTR:
     def __init__(self, cipher, nonce):
         # Nonce will be half of the block_size of the cipher
-        # Counter will start at 0
         self.cipher = cipher
         self.nonce = nonce
 
