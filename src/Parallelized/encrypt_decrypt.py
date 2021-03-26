@@ -8,9 +8,9 @@ import hmac
 import hashlib
 
 
-def parallel(func, chunks, salt, IV):
+def parallel(func, chunks, salt, IV, count_start):
     # Because we're using multiprocessing, CTR counter needs to be pre-computed
-    counters = range(0, len(chunks))
+    counters = range(count_start, len(chunks) + count_start)
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = executor.map(func, chunks, counters)
         return salt + IV + b"".join(results)
@@ -47,7 +47,9 @@ def main():
 
         # Create the IV from the nonce and the initial 6-byte counter value of 0
         # The IV will be stored as the second block of the ciphertext
-        IV = nonce + b"\x00" * 6
+        counter = 0
+
+        IV = nonce + counter.to_bytes(6, "big")
 
         # Start AES cipher
         cipher = AES(password_str=passwd, salt=salt, key_len=256)
@@ -60,7 +62,7 @@ def main():
             file_in[i : i + block_size] for i in range(0, len(file_in), block_size)
         ]
 
-        file_out = parallel(mode.encrypt, chunks, salt, IV)
+        file_out = parallel(mode.encrypt, chunks, salt, IV, counter)
 
         # Create authentication HMAC and store it as the last two blocks of the file
         hmac_val = hmac.digest(key=cipher.hmac_key, msg=file_out, digest=hashlib.sha256)
@@ -75,6 +77,10 @@ def main():
 
         # Extract nonce from the first 10 bytes of the second block of the ciphertext
         nonce = file_in[block_size : block_size + 10]
+
+        # Extract the starting counter value from the next 6 bytes of the ciphertext
+        counter = file_in[block_size + 10 : block_size + 10 + 6]
+        counter = int.from_bytes(counter, "big")
 
         # Extract the HMAC value from the last 2 blocks of the ciphertext
         hmac_val = file_in[-2 * block_size :]
@@ -104,7 +110,7 @@ def main():
             file_in[i : i + block_size] for i in range(0, len(file_in), block_size)
         ]
 
-        file_out = parallel(mode.decrypt, chunks, b"", b"")
+        file_out = parallel(mode.decrypt, chunks, b"", b"", counter)
 
     # Write output file
     with open(args.output_file, "wb") as f_out:
