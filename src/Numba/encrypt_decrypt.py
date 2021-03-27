@@ -3,7 +3,6 @@ from ctr import CTR
 import getpass
 import secrets
 import argparse
-import concurrent.futures
 import hmac
 import hashlib
 
