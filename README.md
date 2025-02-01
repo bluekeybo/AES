@@ -8,7 +8,7 @@ I have tried two different ways to optimize the code and get a faster run:
 1. Regular:
    This is the unoptimized version of the code -- slow.
 2. Parallelized:
-   This version uses parallelization thorugh multiprocessing -- faster.
+   This version uses parallelization through multiprocessing -- faster.
 3. [Numba](https://numba.pydata.org/):
    This version uses Numba, a JIT compiler that translates a subset of Python and NumPy code into fast machine code -- fastest.
 
